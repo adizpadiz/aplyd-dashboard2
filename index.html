@@ -297,6 +297,22 @@ aside{ background:#fff; border-right:1px solid var(--line) }
   font-size:12px;
   text-align:center;
 }
+
+    <style>
+  /* Force the brand text to "Aplyd •" even if HTML doesn't change */
+  .brand{ position:relative; color:transparent !important; }
+  .brand::before{
+    content:"Aplyd •";
+    color:var(--text,#0b1220);
+    font-family: ui-serif, Georgia, serif;
+    font-weight:700;
+    letter-spacing:.3px;
+  }
+  .brand .dot{ display:none }
+
+  /* Hide the old Buy Template button if it still renders */
+  .support .buy{ display:none !important; }
+</style>
  </style>
 </head>
 <body>
