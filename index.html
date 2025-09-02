@@ -857,6 +857,73 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 });
 </script>
+
+<style>
+  /* tiny style touch for the brand dot */
+  .brand .dot{ color: var(--neon, #c8ff3a); margin:0 .25rem 0 .35rem; }
+</style>
+
+<script>
+(function(){
+  function setBrand(){
+    // Prefer an element with class "brand"
+    let el = document.querySelector(".brand");
+    if (!el){
+      // Fallback: find any element whose text looks like "Jobhunt"
+      el = Array.from(document.querySelectorAll("*")).find(n=>{
+        const t = (n.textContent||"").trim();
+        return /^jobh?u.*nt$/i.test(t);
+      });
+      if (el) el.classList.add("brand");
+    }
+    if (el && !el.dataset.brandSet){
+      el.innerHTML = 'Aplyd<span class="dot">•</span>';
+      el.dataset.brandSet = "1";
+      return true;
+    }
+    return !!el;
+  }
+
+  function fixCTA(){
+    // Find "Buy Template" button/link and convert to "Sign up for Beta"
+    const buy = Array.from(document.querySelectorAll("button,a")).find(el=>/buy template/i.test(el.textContent||""));
+    if (buy){
+      const cls = buy.className || "";
+      // ensure it's a link that opens new tab
+      const a = document.createElement("a");
+      a.className = (cls + " primary beta-cta").trim();
+      a.href = "https://aplyd.com/beta";
+      a.target = "_blank";
+      a.rel = "noopener";
+      a.textContent = "Sign up for Beta";
+      buy.replaceWith(a);
+    }
+    // Remove “Endorsed by …” block if present
+    const endorsed = Array.from(document.querySelectorAll("div")).find(el=>/endorsed by/i.test(el.textContent||""));
+    if (endorsed) endorsed.remove();
+  }
+
+  function run(){
+    const branded = setBrand();
+    fixCTA();
+    // If brand element wasn't there yet (SPA/late render), observe and retry
+    if (!branded){
+      const mo = new MutationObserver(()=>{
+        if (setBrand()){ mo.disconnect(); }
+      });
+      mo.observe(document.documentElement, { childList: true, subtree: true });
+    }
+  }
+
+  // Run whether DOM is already loaded or not
+  if (document.readyState === "loading"){
+    document.addEventListener("DOMContentLoaded", run);
+  } else {
+    run();
+  }
+})();
+</script>
+  
 </body>
 </html>
 
