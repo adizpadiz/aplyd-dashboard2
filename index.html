@@ -1,0 +1,735 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Aplyd – Job Agent Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --bg:#f7f7fb;
+      --card:#ffffff;
+      --text:#111827;
+      --muted:#6b7280;
+      --line:#e5e7eb;
+      --accent:#111827;
+      --accent-2:#ff5400;
+      --ok:#16a34a;
+      --warn:#f59e0b;
+      --bad:#ef4444;
+      --pill:#f3f4f6;
+      --shadow:0 1px 2px rgba(0,0,0,.04),0 8px 30px rgba(0,0,0,.04);
+      --radius:14px;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      background:var(--bg);
+      color:var(--text);
+      font:14px/1.4 "Inter",system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;
+    }
+
+    /* Layout */
+    .app{
+      display:grid;
+      grid-template-columns: 260px 1fr;
+      min-height:100dvh;
+      gap:0;
+    }
+    aside{
+      background:#fff;
+      border-right:1px solid var(--line);
+      padding:20px 16px;
+      display:flex;
+      flex-direction:column;
+      gap:16px;
+    }
+    .brand{
+      display:flex;align-items:center;gap:10px;
+      font-weight:800;font-size:22px;letter-spacing:.2px;
+    }
+    .brand .dot{color:var(--accent-2)}
+    nav{display:flex;flex-direction:column;gap:6px;margin-top:8px}
+    .nav-btn{
+      display:flex;align-items:center;gap:10px;
+      padding:12px 12px;border-radius:12px;color:#111827;text-decoration:none;
+      border:1px solid transparent;
+    }
+    .nav-btn.active{background:#111827;color:#fff}
+    .nav-btn svg{width:18px;height:18px}
+    .support{
+      margin-top:auto;
+      display:grid;gap:10px;
+    }
+    .buy{
+      background:var(--accent-2);color:#fff;border:none;border-radius:12px;
+      padding:12px 14px;font-weight:700;cursor:pointer;
+    }
+
+    header{
+      padding:14px 24px;border-bottom:1px solid var(--line);
+      background:#fff; display:flex; align-items:center; justify-content:space-between;
+    }
+    .hello{display:flex; align-items:center; gap:10px}
+    .hello .hi{
+      background:#f3f4f6;border:1px solid var(--line);padding:10px 14px;border-radius:12px;
+      color:#374151;font-weight:600;
+    }
+    .quick{display:flex; gap:12px; align-items:center}
+    .chip{
+      border:1px solid var(--line); background:#fff; padding:10px 16px; border-radius:999px; font-weight:600;
+      display:inline-flex; align-items:center; gap:8px;
+    }
+    .btn{
+      border:1px solid var(--line); background:#fff; padding:10px 16px; border-radius:12px; cursor:pointer;
+      font-weight:600;
+    }
+    .btn.primary{background:#111827;color:#fff;border-color:#111827}
+    .btn.ghost{background:#fff}
+    .btn[disabled]{opacity:.5;cursor:not-allowed}
+
+    main{padding:24px; display:grid; gap:18px}
+    .grid{
+      display:grid; grid-template-columns: 1.2fr .8fr; gap:18px;
+    }
+    .card{
+      background:var(--card); border:1px solid var(--line); border-radius:var(--radius); box-shadow:var(--shadow);
+    }
+    .hero{padding:32px}
+    .hero h1{font-size:44px;margin:0 0 10px 0;font-weight:800;letter-spacing:.2px}
+    .hero p{color:var(--muted);max-width:560px}
+
+    .side-cards{display:grid; grid-template-columns:1fr 1fr; gap:18px}
+    .side-card{padding:24px}
+    .side-card h3{margin:0 0 10px 0}
+    .side-card p{margin:0 0 18px 0;color:var(--muted)}
+    .side-card .cta{display:inline-flex; align-items:center; gap:8px; border:1px solid var(--line); padding:10px 18px;
+      border-radius:999px; font-weight:600; }
+
+    .section{padding:8px 0}
+    .section h2{
+      font-size:18px;margin:10px 0; display:flex; align-items:center; justify-content:space-between;
+      padding:0 8px;color:#111827
+    }
+    .toolbar{
+      display:flex; gap:10px; flex-wrap:wrap; padding:8px;
+    }
+    .input, select{
+      border:1px solid var(--line); border-radius:10px; padding:10px 12px; background:#fff; min-width:160px;
+    }
+    .switch{
+      display:inline-flex; align-items:center; gap:8px; padding:8px 10px; border:1px solid var(--line);
+      border-radius:12px; background:#fff;
+    }
+    .switch input{accent-color:#111827}
+    .range{display:flex; align-items:center; gap:10px}
+    .range input[type=range]{width:180px}
+
+    /* Job list */
+    .jobs{display:grid; grid-template-columns:repeat(3,minmax(260px,1fr)); gap:18px; padding:8px}
+    .job{
+      border:1px solid var(--line); border-radius:14px; background:#fff; padding:16px; display:grid; gap:12px;
+      position:relative;
+    }
+    .job .save{position:absolute; right:16px; top:16px; border:none; background:transparent; cursor:pointer}
+    .company{display:flex; gap:12px; align-items:center}
+    .logo{width:36px; height:36px; border-radius:10px; display:grid; place-items:center; background:#eef2ff;
+      font-weight:800; color:#4338ca}
+    .title{display:grid}
+    .title h4{margin:0; font-size:15px}
+    .title small{color:var(--muted)}
+    .meta{display:flex; gap:10px; flex-wrap:wrap; color:#4b5563}
+    .meta span{display:inline-flex; gap:6px; align-items:center; background:var(--pill); border:1px solid var(--line); padding:6px 10px; border-radius:999px}
+    .fit{
+      display:flex; align-items:center; justify-content:space-between; gap:10px;
+      padding:8px 10px; border:1px dashed var(--line); border-radius:12px; background:#fafafa;
+    }
+    .fit .score{font-weight:800}
+    .fit[data-level="high"] .score{color:var(--ok)}
+    .fit[data-level="med"] .score{color:var(--warn)}
+    .fit[data-level="low"] .score{color:var(--bad)}
+    .actions{display:flex; gap:8px}
+    .pill{
+      display:inline-flex; align-items:center; gap:6px; padding:6px 10px; background:var(--pill); border:1px solid var(--line);
+      border-radius:999px; font-weight:600; color:#374151;
+    }
+    .status{justify-self:start}
+    .status[data-s="approved"]{background:#ecfdf5;border-color:#bbf7d0;color:#065f46}
+    .status[data-s="applied"]{background:#eef2ff;border-color:#c7d2fe;color:#3730a3}
+    .status[data-s="interview"]{background:#fff7ed;border-color:#fed7aa;color:#9a3412}
+    .status[data-s="rejected"]{background:#fef2f2;border-color:#fecaca;color:#991b1b}
+
+    /* Modal */
+    dialog{border:none;border-radius:16px; padding:0; width:min(720px,96vw); box-shadow:0 24px 60px rgba(0,0,0,.18)}
+    .modal{padding:18px 18px 20px; display:grid; gap:12px}
+    .modal header{border:0;padding:0;background:none}
+    .row{display:grid; gap:10px}
+    .two{grid-template-columns:1fr 1fr}
+    textarea{min-height:120px; padding:12px; border-radius:12px; border:1px solid var(--line); resize:vertical}
+    .toast{
+      position:fixed; right:18px; bottom:18px; display:grid; gap:8px; z-index:9999;
+    }
+    .toast .t{
+      background:#111827; color:#fff; padding:12px 14px; border-radius:12px; box-shadow:var(--shadow);
+      animation: slideIn .2s ease-out;
+    }
+    @keyframes slideIn { from{ transform:translateY(8px); opacity:0 } to{ transform:translateY(0); opacity:1 } }
+
+    /* Responsive */
+    @media (max-width: 1160px){
+      .grid{grid-template-columns:1fr}
+      .side-cards{grid-template-columns:1fr 1fr}
+      .jobs{grid-template-columns:repeat(2,minmax(240px,1fr))}
+    }
+    @media (max-width: 760px){
+      .app{grid-template-columns:1fr}
+      aside{display:none}
+      .side-cards{grid-template-columns:1fr}
+      .jobs{grid-template-columns:1fr}
+    }
+  </style>
+</head>
+<body>
+<div class="app">
+
+  <!-- Sidebar -->
+  <aside>
+    <div class="brand">Jobhu<span class="dot">∙</span>nt</div>
+    <nav>
+      <a class="nav-btn active" href="#"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M10.5 1.5a1.5 1.5 0 0 1 3 0V3h2.25A3.75 3.75 0 0 1 19.5 6.75V21a1.5 1.5 0 0 1-1.5 1.5h-11A1.5 1.5 0 0 1 5.5 21V6.75A3.75 3.75 0 0 1 9.25 3H11.5V1.5zM9.25 4.5A2.25 2.25 0 0 0 7 6.75V21h10V6.75A2.25 2.25 0 0 0 14.75 4.5h-5.5z"/></svg> Home</a>
+      <a class="nav-btn" href="#"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 5.25A2.25 2.25 0 0 1 5.25 3h13.5A2.25 2.25 0 0 1 21 5.25V18.75A2.25 2.25 0 0 1 18.75 21H5.25A2.25 2.25 0 0 1 3 18.75V5.25zM5.25 4.5a.75.75 0 0 0-.75.75V9h15V5.25a.75.75 0 0 0-.75-.75H5.25z"/></svg> Jobs</a>
+      <a class="nav-btn" href="#"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 3.75A2.25 2.25 0 0 0 3.75 6v12A2.25 2.25 0 0 0 6 20.25h12A2.25 2.25 0 0 0 20.25 18V6A2.25 2.25 0 0 0 18 3.75H6zM6 5.25h12a.75.75 0 0 1 .75.75v12a.75.75 0 0 1-.75.75H6a.75.75 0 0 1-.75-.75V6a.75.75 0 0 1 .75-.75z"/></svg> Saved Jobs</a>
+      <a class="nav-btn" href="#"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M4.5 3.75A.75.75 0 0 1 5.25 3h9a.75.75 0 0 1 .75.75V9h3.75a.75.75 0 0 1 .75.75v10.5a.75.75 0 0 1-.75.75H5.25a.75.75 0 0 1-.75-.75V3.75zM6 4.5V19.5h12V10.5h-3.75A.75.75 0 0 1 13.5 9.75V4.5H6z"/></svg> Learn</a>
+      <a class="nav-btn" href="#"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 12a5.25 5.25 0 1 0 0-10.5A5.25 5.25 0 0 0 12 12zm-8.25 9a8.25 8.25 0 1 1 16.5 0V22.5h-16.5V21z"/></svg> Profile</a>
+    </nav>
+
+    <div class="support">
+      <div style="display:flex;align-items:center;gap:8px;color:#6b7280">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 1.5a10.5 10.5 0 1 1 0 21 10.5 10.5 0 0 1 0-21zM12 7.5a.75.75 0 1 0 0 1.5h.008a.75.75 0 0 0 0-1.5H12zm-1.5 3a.75.75 0 0 1 .75-.75h1.5a.75.75 0 0 1 .75.75v6a.75.75 0 0 1-1.5 0v-5.25H11.25A.75.75 0 0 1 10.5 10.5z"/></svg>
+        Support
+      </div>
+      <button class="buy">Buy Template</button>
+      <div style="border:1px solid var(--line);border-radius:12px;padding:12px;color:#6b7280;">Endorsed by <b>Plaiter</b></div>
+    </div>
+  </aside>
+
+  <!-- Content -->
+  <div style="display:flex;flex-direction:column;min-width:0">
+    <header>
+      <div class="hello">
+        <div class="hi">Hi, Adam 👋</div>
+      </div>
+      <div class="quick">
+        <div class="chip">Agent Mode <input id="agentToggle" type="checkbox"/></div>
+        <div class="range">
+          <label for="threshold"><b>Auto-apply ≥</b></label>
+          <input id="threshold" type="range" min="50" max="100" step="1" />
+          <span id="thresholdVal" class="chip">90</span>
+        </div>
+        <button class="btn primary" id="syncBtn">Sync Now</button>
+      </div>
+    </header>
+
+    <main>
+      <div class="grid">
+        <section class="card hero">
+          <h1>Start your job search</h1>
+          <p>We stay true to our word. Your next role is here! Don’t hold the ball — get it rolling.</p>
+        </section>
+
+        <section class="side-cards">
+          <div class="card side-card">
+            <h3>Search for Jobs</h3>
+            <p>We vet companies job vacancies before listing them.</p>
+            <a class="cta" href="#">See Jobs →</a>
+          </div>
+          <div class="card side-card">
+            <h3>Get Helpful Tips</h3>
+            <p>Curated resources to help you hunt and apply.</p>
+            <a class="cta" href="#">See Resources →</a>
+          </div>
+        </section>
+      </div>
+
+      <section class="card section">
+        <h2>
+          Recent Job Listings
+          <small><a href="#" id="seeAll" style="color:#6b7280;text-decoration:none">See all jobs</a></small>
+        </h2>
+
+        <div class="toolbar">
+          <input class="input" id="q" placeholder="Search title, company…" />
+          <select id="loc">
+            <option value="">All locations</option>
+            <option>Remote</option>
+            <option>Onsite</option>
+            <option>Hybrid</option>
+          </select>
+          <select id="vis">
+            <option value="">Visibility (any)</option>
+            <option value="public">Public</option>
+            <option value="private">Private</option>
+            <option value="draft">Draft</option>
+          </select>
+          <select id="resumePicker"></select>
+          <button class="btn ghost" id="clear">Clear</button>
+        </div>
+
+        <div id="jobList" class="jobs"></div>
+      </section>
+    </main>
+  </div>
+</div>
+
+<!-- Apply Modal -->
+<dialog id="applyModal">
+  <form method="dialog" class="modal">
+    <header style="display:flex;justify-content:space-between;align-items:center">
+      <h3 style="margin:0">Apply to <span id="mCompany"></span> — <span id="mTitle" style="color:#6b7280"></span></h3>
+      <button class="btn" value="close">✕</button>
+    </header>
+    <div class="row two">
+      <label>Resume
+        <select id="mResume"></select>
+      </label>
+      <label>Cover Letter (draft)
+        <select id="mHasCover">
+          <option value="draft">Create draft</option>
+          <option value="none">No cover letter</option>
+        </select>
+      </label>
+    </div>
+    <label>Cover Letter Text
+      <textarea id="mCoverText" placeholder="Why you're a great fit…"></textarea>
+    </label>
+    <div class="actions" style="justify-content:flex-end">
+      <button class="btn" value="cancel">Cancel</button>
+      <button id="applyConfirm" class="btn primary" value="apply">Apply</button>
+    </div>
+  </form>
+</dialog>
+
+<div id="toasts" class="toast"></div>
+
+<!-- Supabase client -->
+<script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+<script>
+/* ========= Config ========= */
+const SUPABASE_URL = "";      // ← fill in
+const SUPABASE_ANON_KEY = ""; // ← fill in
+
+/* ========= Utilities ========= */
+const $ = sel => document.querySelector(sel);
+const $$ = sel => Array.from(document.querySelectorAll(sel));
+const fmtMoneyRange = (r) => r || "$—/hr";
+const timeAgo = (ts) => {
+  if (!ts) return "";
+  const d = new Date(ts), diff = (Date.now() - d.getTime())/1000;
+  const units = [["yr",31536000],["mo",2592000],["d",86400],["h",3600]];
+  for (const [u,s] of units) if (diff >= s) return `${Math.floor(diff/s)} ${u} ago`;
+  return "just now";
+};
+const level = (score)=> score>=90 ? "high" : score>=75 ? "med" : "low";
+const svgBookmark = (on=false)=> on
+  ? '<svg width="18" height="18" viewBox="0 0 24 24" fill="#111827"><path d="M6 2.25A2.25 2.25 0 0 0 3.75 4.5v17.25l8.25-4.5 8.25 4.5V4.5A2.25 2.25 0 0 0 18.75 2.25H6z"/></svg>'
+  : '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="1.5"><path d="M6 2.25h12A2.25 2.25 0 0 1 20.25 4.5v17.25l-8.25-4.5-8.25 4.5V4.5A2.25 2.25 0 0 1 6 2.25z"/></svg>';
+
+const toast = (msg) => {
+  const host = $("#toasts");
+  const div = document.createElement("div");
+  div.className = "t";
+  div.textContent = msg;
+  host.appendChild(div);
+  setTimeout(()=>div.remove(), 3500);
+};
+
+/* ========= State ========= */
+const state = {
+  userId: null,
+  resumes: [],
+  jobs: [],
+  applications: [], // [{id, job_id, user_id, resume_id, cover_letter_id, fit_score, status, applied_at, created_at}]
+  bookmarks: new Set(JSON.parse(localStorage.getItem("bookmarks")||"[]")),
+  agent: JSON.parse(localStorage.getItem("agent")||"false"),
+  threshold: parseInt(localStorage.getItem("threshold")||"90",10),
+  client: null,
+  mock: false,
+};
+
+/* ========= Init ========= */
+(async function init(){
+  $("#agentToggle").checked = state.agent;
+  $("#threshold").value = state.threshold;
+  $("#thresholdVal").textContent = state.threshold;
+
+  $("#threshold").addEventListener("input", e=>{
+    state.threshold = +e.target.value; $("#thresholdVal").textContent = state.threshold;
+    localStorage.setItem("threshold", String(state.threshold));
+    render();
+  });
+  $("#agentToggle").addEventListener("change", e=>{
+    state.agent = e.target.checked; localStorage.setItem("agent", JSON.stringify(state.agent));
+    toast(state.agent ? "Agent Mode enabled" : "Agent Mode disabled");
+  });
+  $("#clear").addEventListener("click", ()=>{
+    $("#q").value=""; $("#loc").value=""; $("#vis").value="";
+    render();
+  });
+  $("#q,#loc,#vis").forEach?.(()=>{}); // noop to avoid errors on Node lists
+  $("#q").addEventListener("input", render);
+  $("#loc").addEventListener("change", render);
+  $("#vis").addEventListener("change", render);
+  $("#syncBtn").addEventListener("click", syncNow);
+
+  // Supabase or Mock
+  if (SUPABASE_URL && SUPABASE_ANON_KEY){
+    const { createClient } = window.supabase;
+    state.client = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { auth: { persistSession: true }});
+    await ensureUser();
+    await loadAll();
+    realtime();
+  }else{
+    state.mock = true;
+    mockSeed();
+    render();
+  }
+})();
+
+/* ========= Supabase Flows ========= */
+async function ensureUser(){
+  // Try to get current user; if none, sign in anonymously
+  const { data: { user } } = await state.client.auth.getUser();
+  if (user) { state.userId = user.id; return; }
+  const { data, error } = await state.client.auth.signInAnonymously();
+  if (error) console.error(error);
+  state.userId = data.user.id;
+}
+
+async function loadAll(){
+  await Promise.all([loadResumes(), loadJobs(), loadApplications()]);
+  render();
+}
+
+async function loadResumes(){
+  if (state.mock) return;
+  const { data, error } = await state.client.from("resumes")
+    .select("id,title,file_url,created_at")
+    .order("created_at",{ascending:false});
+  if (error) { console.error(error); return; }
+  state.resumes = data || [];
+}
+
+async function loadJobs(){
+  if (state.mock) return;
+  const { data, error } = await state.client.from("jobs")
+    .select("id,source,url,company,title,description,location,salary_range,posted_at,created_at,visibility,user_id")
+    .order("posted_at",{ascending:false}).limit(60);
+  if (error){ console.error(error); return; }
+  state.jobs = data || [];
+}
+
+async function loadApplications(){
+  if (state.mock) return;
+  const { data, error } = await state.client.from("applications")
+    .select("id,user_id,job_id,resume_id,cover_letter_id,fit_score,status,applied_at,created_at")
+    .eq("user_id", state.userId)
+    .order("created_at",{ascending:false}).limit(200);
+  if (error){ console.error(error); return; }
+  state.applications = data || [];
+}
+
+function realtime(){
+  // Listen to applications + notifications
+  state.client.channel("aplyd-realtime")
+    .on("postgres_changes",
+      { event: "*", schema: "public", table: "applications", filter:`user_id=eq.${state.userId}` },
+      async (payload)=>{ await loadApplications(); render(); })
+    .on("postgres_changes",
+      { event: "INSERT", schema: "public", table: "notifications", filter:`user_id=eq.${state.userId}` },
+      (payload)=> { toast(`🔔 ${payload.new.type}: ${payload.new.message}`); })
+    .subscribe();
+}
+
+async function syncNow(){
+  // Hook to your crawler/ingestion; here we just refresh lists
+  await loadAll();
+  toast("Synced jobs & applications ✔️");
+}
+
+/* ========= Mock Data ========= */
+function mockSeed(){
+  state.userId = "demo-user";
+  state.resumes = [
+    {id:"r1", title:"General Resume", file_url:"#", created_at:new Date().toISOString()},
+    {id:"r2", title:"Frontend Focus", file_url:"#", created_at:new Date(Date.now()-86400000).toISOString()},
+  ];
+  const companies = [["Atlassian","#4f46e5"],["Anima","#ef4444"],["Airtable","#f59e0b"],["Linear","#111827"],["Vercel","#111827"],["Figma","#111827"]];
+  const locs = ["Remote","Onsite","Hybrid"];
+  state.jobs = Array.from({length:9}).map((_,i)=>{
+    const [c] = companies[i%companies.length];
+    const s = ["$50-70/hr","$80-100/hr","$90-120/hr"][i%3];
+    const location = [locs[i%3], "Remote, Europe", "Onsite, NY"][i%3];
+    return {
+      id:"j"+(i+1),
+      source:"MockBoard",
+      url:"#",
+      company:c,
+      title:["Frontend Developer","Full Stack Engineer","Product Manager"][i%3],
+      description:"We are looking for a pragmatic builder.",
+      location, salary_range:s, posted_at:new Date(Date.now()-i*3600e3).toISOString(),
+      visibility:["public","private","draft"][i%3],
+      user_id:null
+    };
+  });
+  state.applications = [
+    {id:"a1", user_id:state.userId, job_id:"j1", resume_id:"r2", cover_letter_id:null, fit_score:92, status:"applied", applied_at:new Date().toISOString(), created_at:new Date().toISOString()}
+  ];
+}
+
+/* ========= Rendering ========= */
+function renderResumesPicker(selectEl){
+  const opts = [`<option value="">Select resume…</option>`]
+    .concat(state.resumes.map(r=>`<option value="${r.id}">${escapeHtml(r.title)}</option>`));
+  selectEl.innerHTML = opts.join("");
+  // default selected
+  if (state.resumes[0]) selectEl.value = state.resumes[0].id;
+}
+
+function render(){
+  // top resume picker
+  renderResumesPicker($("#resumePicker"));
+
+  const q = ($("#q").value||"").toLowerCase();
+  const loc = $("#loc").value;
+  const vis = $("#vis").value;
+
+  const appsByJob = new Map(state.applications.map(a=>[a.job_id, a]));
+  const jobs = state.jobs.filter(j=>{
+    const matchQ = !q || (j.title+" "+j.company).toLowerCase().includes(q);
+    const matchLoc = !loc || (j.location||"").toLowerCase().includes(loc.toLowerCase());
+    const matchVis = !vis || (j.visibility===vis);
+    return matchQ && matchLoc && matchVis;
+  });
+
+  $("#jobList").innerHTML = jobs.map(j=>{
+    const app = appsByJob.get(j.id);
+    const isSaved = state.bookmarks.has(j.id);
+    const score = app?.fit_score ?? guessFitScore(j); // quick heuristic
+    const lev = level(score);
+    const status = app?.status;
+    return `
+    <article class="job" data-id="${j.id}">
+      <button class="save" title="${isSaved?'Saved':'Save'}">${svgBookmark(isSaved)}</button>
+      <div class="company">
+        <div class="logo">${j.company[0]}</div>
+        <div class="title">
+          <h4>${escapeHtml(j.company)}</h4>
+          <small>${escapeHtml(j.title)}</small>
+        </div>
+      </div>
+      <div class="meta">
+        <span>📍 ${escapeHtml(j.location||'Remote')}</span>
+        <span>🕒 ${timeAgo(j.posted_at)}</span>
+        <span>💰 ${escapeHtml(fmtMoneyRange(j.salary_range))}</span>
+        ${j.visibility?`<span>👁️ ${escapeHtml(j.visibility)}</span>`:""}
+      </div>
+      <div class="fit" data-level="${lev}">
+        <div><b>Fit Score</b></div>
+        <div class="score">${score}</div>
+        ${state.agent && score>=state.threshold ? '<span class="pill">Auto-apply eligible</span>' : ''}
+      </div>
+      ${status ? `<div class="status pill" data-s="${status}">${status}</div>` : ""}
+      <div class="actions">
+        <button class="btn ghost" data-action="view">View</button>
+        <button class="btn" data-action="approve">Approve</button>
+        <button class="btn primary" data-action="apply" ${status==='applied'?'disabled':''}>${status==='applied'?'Applied':'Apply'}</button>
+      </div>
+    </article>`;
+  }).join("");
+
+  // bind actions
+  $$(".job .save").forEach(btn=>{
+    btn.onclick = (e)=>{
+      const id = e.currentTarget.closest(".job").dataset.id;
+      if (state.bookmarks.has(id)) state.bookmarks.delete(id); else state.bookmarks.add(id);
+      localStorage.setItem("bookmarks", JSON.stringify([...state.bookmarks]));
+      render();
+    };
+  });
+  $$(".job [data-action]").forEach(btn=>{
+    btn.onclick = onJobAction;
+  });
+}
+
+/* ========= Actions ========= */
+function onJobAction(e){
+  const action = e.currentTarget.dataset.action;
+  const id = e.currentTarget.closest(".job").dataset.id;
+  const job = state.jobs.find(j=>j.id===id);
+  const app = state.applications.find(a=>a.job_id===id);
+  if (action==="view"){
+    window.open(job.url || "#", "_blank");
+  }
+  if (action==="approve"){
+    approveJob(job, app);
+  }
+  if (action==="apply"){
+    openApplyModal(job, app);
+  }
+}
+
+async function approveJob(job, existing){
+  if (existing){ toast("Already in your pipeline."); return; }
+  const fit = guessFitScore(job);
+  const payload = {
+    user_id: state.userId,
+    job_id: job.id,
+    fit_score: fit,
+    status: "approved",
+    created_at: new Date().toISOString()
+  };
+  state.applications.unshift(payload); // optimistic
+  render();
+
+  if (state.mock) { toast("Approved ✔️"); return; }
+
+  const { data, error } = await state.client.from("applications").insert(payload).select().single();
+  if (error){ console.error(error); toast("Failed to approve ❗"); return; }
+  // replace temp object with db row
+  await loadApplications(); render();
+  toast("Approved ✔️");
+
+  if (state.agent && fit >= state.threshold){
+    openApplyModal(job, data, true); // auto open + apply
+  }
+}
+
+function openApplyModal(job, app, auto = false){
+  const dlg = $("#applyModal");
+  $("#mCompany").textContent = job.company;
+  $("#mTitle").textContent = job.title;
+  renderResumesPicker($("#mResume"));
+  $("#mCoverText").value = smartCoverDraft(job);
+  $("#mHasCover").value = "draft";
+  dlg.showModal();
+
+  $("#applyConfirm").onclick = async (ev)=>{
+    ev.preventDefault();
+    await applyNow(job, app);
+    dlg.close();
+  };
+
+  if (auto){
+    // auto-apply after a short delay to allow modal to mount
+    setTimeout(async ()=>{ await applyNow(job, app); dlg.close(); }, 400);
+  }
+}
+
+async function applyNow(job, existingApp){
+  const resume_id = $("#mResume").value || state.resumes[0]?.id;
+  const wantCover = $("#mHasCover").value === "draft";
+  const coverText = $("#mCoverText").value.trim();
+
+  let cover_letter_id = null;
+
+  if (wantCover){
+    if (state.mock){
+      cover_letter_id = "cl_"+Math.random().toString(36).slice(2,8);
+    }else{
+      const { data: cl, error: cle } = await state.client.from("cover_letters").insert({
+        user_id: state.userId,
+        resume_id,
+        job_id: job.id,
+        file_url: null,
+        draft: coverText,
+        created_at: new Date().toISOString()
+      }).select().single();
+      if (cle) { console.error(cle); toast("Failed to create cover letter ❗"); return; }
+      cover_letter_id = cl.id;
+    }
+  }
+
+  const base = existingApp || {
+    user_id: state.userId,
+    job_id: job.id,
+    fit_score: guessFitScore(job),
+    status: "approved",
+    created_at: new Date().toISOString()
+  };
+
+  const patch = {
+    ...base,
+    resume_id,
+    cover_letter_id,
+    status: "applied",
+    applied_at: new Date().toISOString()
+  };
+
+  // optimistic update
+  const idx = state.applications.findIndex(a=>a.job_id===job.id);
+  if (idx>=0) state.applications[idx] = patch; else state.applications.unshift(patch);
+  render();
+
+  if (state.mock){ toast("Applied 🎯"); return; }
+
+  // upsert application
+  const { error } = await state.client.from("applications")
+    .upsert(patch, { onConflict: "id" });
+  if (error){ console.error(error); toast("Failed to apply ❗"); return; }
+
+  // optional: push a notification row
+  await state.client.from("notifications").insert({
+    user_id: state.userId, type: "applied", message: `Applied to ${job.company} — ${job.title}`,
+    sent_at: new Date().toISOString()
+  });
+
+  toast("Applied 🎯");
+  await loadApplications(); render();
+}
+
+/* ========= Helpers ========= */
+function guessFitScore(job){
+  // simple heuristic. Replace with server-side score if available.
+  const t = (job.title||"").toLowerCase();
+  let s = 60;
+  if (t.includes("frontend")) s+=18;
+  if (t.includes("engineer")) s+=10;
+  if ((job.location||"").toLowerCase().includes("remote")) s+=6;
+  if (job.salary_range?.match(/\d{2,3}/)) s+=4;
+  return Math.min(99, Math.max(50, Math.round(s)));
+}
+function smartCoverDraft(job){
+  return `Dear Hiring Manager,
+
+I'm excited to apply for the ${job.title} role at ${job.company}. My experience aligns with your needs:
+• Built user-facing features with modern JS/TS and component libraries.
+• Collaborated cross-functionally to ship reliably and on time.
+• Focus on accessibility, performance, and maintainability.
+
+I'd love to bring the same energy to ${job.company}. Thanks for your time!
+
+Best,
+Candidate`;
+}
+function escapeHtml(s){ return (s??"").replace(/[&<>"']/g, m=>({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[m])); }
+
+/* ========= Populate top resume select ========= */
+document.addEventListener("change", (e)=>{
+  if (e.target.id==="resumePicker"){
+    // Mirror selection into modal default for convenience
+    $("#mResume").value = e.target.value;
+  }
+});
+</script>
+</body>
+</html>
+
+git add index.html
+git commit -m "Add dashboard code"
+git push origin main
+
+
+
+
