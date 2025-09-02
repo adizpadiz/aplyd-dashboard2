@@ -849,6 +849,14 @@ document.addEventListener("change", (e)=>{
   z-index: 1; /* keeps the UI above the glow */
 }
 </style>
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  const brand = document.querySelector(".brand");
+  if (brand) {
+    brand.innerHTML = 'Aplyd<span class="dot">•</span>';
+  }
+});
+</script>
 </body>
 </html>
 
