@@ -736,3 +736,595 @@ document.addEventListener("keydown", (e)=>{
 </script>
 </body>
 </html>
+
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Aplyd — Swipe Jobs</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+<meta name="color-scheme" content="light dark" />
+<style>
+:root{
+  /* Pastel, playful palette */
+  --bg:#ffffff;
+  --text:#0b1220;
+  --muted:#6b7280;
+  --line:#eaecef;
+  --card:#ffffff;
+  --pill:#f7f8fa;
+  --shadow:0 6px 28px rgba(16,24,40,.08), 0 2px 8px rgba(16,24,40,.04);
+  --primary-a:#40a9ff;   /* blue */
+  --primary-b:#22c55e;   /* green */
+  --neon:#c8ff3a;        /* glow */
+  --pink:#ffd6e7;
+  --mint:#d8ffec;
+  --lav:#e6e2ff;
+  --sky:#dff0ff;
+  --sun:#fff3cd;
+
+  --ok:#16a34a;
+  --warn:#f59e0b;
+  --bad:#ef4444;
+
+  --radius:20px;
+  --r-small:14px;
+}
+
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#0b1220;
+    --text:#f8fafc;
+    --muted:#9aa4b2;
+    --line:#1f2937;
+    --card:#0f172a;
+    --pill:#0b1326;
+    --shadow:0 8px 30px rgba(0,0,0,.35);
+    --pink:#40283a; --mint:#203a33; --lav:#2a2742; --sky:#1a2a3a; --sun:#3a2f1a;
+  }
+}
+
+*{ box-sizing:border-box }
+html,body{ height:100% }
+body{
+  margin:0;
+  background:var(--bg);
+  color:var(--text);
+  font:14px/1.45 "Inter",system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;
+  overflow-x:hidden;
+}
+
+/* Background blobs */
+.blobs{
+  position:fixed; inset:-10vmax -20vmax auto -20vmax; height:60vmax;
+  pointer-events:none; z-index:0; filter: blur(30px) saturate(120%);
+  background:
+    radial-gradient(35vmax 30vmax at 20% 10%, var(--mint), transparent 60%),
+    radial-gradient(38vmax 30vmax at 80% 0%, var(--sky), transparent 60%),
+    radial-gradient(28vmax 24vmax at 50% 40%, var(--pink), transparent 60%),
+    radial-gradient(28vmax 24vmax at 40% 80%, var(--lav), transparent 60%),
+    radial-gradient(26vmax 20vmax at 70% 90%, var(--sun), transparent 60%);
+  opacity:.9;
+}
+
+/* Header */
+.header{
+  position:sticky; top:0; z-index:5;
+  display:flex; align-items:center; justify-content:space-between; gap:12px;
+  padding:16px 24px;
+}
+.brand{
+  display:flex; align-items:center; gap:.5rem;
+  font:800 24px ui-serif, Georgia, serif;
+  letter-spacing:.3px;
+}
+.brand .dot{ color:var(--neon) }
+.controls{ display:flex; align-items:center; gap:10px; flex-wrap:wrap }
+.chip{
+  display:inline-flex; align-items:center; gap:8px;
+  padding:8px 12px; border-radius:999px;
+  background:var(--pill); border:1px solid var(--line); font-weight:600; color:var(--muted);
+}
+.btn{
+  border:1px solid var(--line); background:var(--card); color:inherit;
+  padding:10px 16px; border-radius:12px; cursor:pointer; font-weight:700;
+}
+.btn.primary{
+  border:none; color:#fff;
+  background:linear-gradient(90deg,var(--primary-a),var(--primary-b));
+  box-shadow:0 6px 18px rgba(34,197,94,.25), 0 2px 8px rgba(64,169,255,.22);
+}
+
+/* Canvas confetti sits on top */
+#fx{ position:fixed; inset:0; z-index:7; pointer-events:none }
+
+/* Layout */
+.wrap{
+  position:relative; z-index:1;
+  display:grid; place-items:center;
+  padding:10px 16px 26px;
+}
+.deck{
+  width:min(820px, 96vw);
+  height: min(76vh, 720px);
+  position:relative;
+}
+
+/* Card stack */
+.card{
+  position:absolute; inset:0;
+  background:var(--card);
+  border:1px solid var(--line);
+  border-radius:var(--radius);
+  box-shadow:var(--shadow);
+  display:grid; grid-template-rows:auto 1fr auto; gap:10px;
+  user-select:none; touch-action:none;
+  will-change:transform, opacity;
+  transition:box-shadow .2s ease;
+}
+.card:hover{ box-shadow:0 12px 40px rgba(2,8,20,.14) }
+.card .top{
+  display:flex; align-items:center; justify-content:space-between; gap:12px;
+  padding:18px 18px 8px 18px;
+}
+.badge{
+  display:inline-flex; align-items:center; gap:8px;
+  padding:8px 12px; background:var(--pill); border:1px solid var(--line);
+  border-radius:999px; font-weight:700;
+}
+.logo{
+  width:44px; height:44px; border-radius:12px; display:grid; place-items:center;
+  font-weight:800; color:#1849a9; background:#eef7ff;
+  flex: none;
+}
+.title{ display:grid }
+.title h3{ margin:0; font-size:18px }
+.title small{ color:var(--muted) }
+
+/* Body */
+.body{
+  padding:8px 18px 0; overflow:auto;
+}
+.meta{ display:flex; flex-wrap:wrap; gap:10px; color:#4b5563; margin-bottom:6px }
+.meta span{
+  display:inline-flex; align-items:center; gap:6px;
+  padding:6px 10px; border-radius:999px;
+  background:var(--pill); border:1px solid var(--line);
+}
+.tags{ display:flex; flex-wrap:wrap; gap:8px; }
+.tag{ padding:6px 10px; border-radius:999px; font-weight:600;
+  background:var(--pill); border:1px solid var(--line) }
+
+.fit{
+  display:flex; align-items:center; gap:10px; justify-content:space-between;
+  padding:10px 12px; border:1px dashed var(--line); border-radius:12px; margin-top:10px;
+  background: color-mix(in lab, var(--pill) 80%, transparent);
+}
+.score{ font:800 20px/1 Inter, system-ui }
+.fit[data-lvl="high"] .score{ color:var(--ok) }
+.fit[data-lvl="med"] .score{ color:var(--warn) }
+.fit[data-lvl="low"] .score{ color:var(--bad) }
+
+/* Footer actions */
+.actions{
+  display:flex; align-items:center; justify-content:center; gap:14px; padding:14px 18px 18px;
+}
+.circle{
+  width:64px; height:64px; border-radius:50%;
+  display:grid; place-items:center; font-size:22px; font-weight:900; cursor:pointer;
+  border:1px solid var(--line); background:var(--card);
+  transition:transform .08s ease, box-shadow .2s ease;
+}
+.circle:hover{ transform:translateY(-1px) }
+.circle.pass{ background:var(--pink) }
+.circle.save{ background:var(--lav) }
+.circle.like{ background:var(--mint) }
+
+/* Stack transforms — each deeper card is slightly scaled/rotated */
+.card:nth-last-child(1){ transform:translate(0,0) rotate(0deg) }
+.card:nth-last-child(2){ transform:translate(0,6px) rotate(-1deg) scale(.996) }
+.card:nth-last-child(3){ transform:translate(0,12px) rotate(1deg)  scale(.992) }
+.card.leave{ pointer-events:none }
+
+/* Toasts & bottom tray */
+.toast{ position:fixed; right:18px; bottom:18px; display:grid; gap:8px; z-index:9 }
+.toast .t{
+  background:#0b1220; color:#fff; padding:12px 14px; border-radius:12px; box-shadow:var(--shadow);
+  animation:slideIn .2s ease-out;
+}
+@keyframes slideIn{ from{ transform:translateY(8px); opacity:0 } to{ transform:translateY(0); opacity:1 } }
+
+.tray{
+  width:min(920px, 96vw);
+  margin:8px auto 22px;
+  display:grid; grid-template-columns: repeat(auto-fit, minmax(220px,1fr)); gap:10px;
+}
+.chiprow{
+  display:flex; gap:8px; flex-wrap:wrap; align-items:center;
+  background:var(--card); border:1px solid var(--line); border-radius:var(--r-small); padding:10px 12px;
+}
+.chiprow .pill{ background:var(--pill); border:1px solid var(--line); padding:6px 10px; border-radius:999px; font-weight:700 }
+
+/* Search bar */
+.searchbar{
+  width:min(920px, 96vw);
+  margin:6px auto 0;
+  display:flex; gap:10px; align-items:center; flex-wrap:wrap; justify-content:center;
+}
+.input, select{
+  border:1px solid var(--line); background:var(--card); color:inherit;
+  padding:10px 12px; border-radius:12px; min-width:160px;
+}
+.range{ display:flex; align-items:center; gap:8px }
+kbd{ background:var(--pill); border:1px solid var(--line); padding:2px 6px; border-radius:6px; font-weight:700; font-size:12px }
+
+@media (max-width:760px){
+  .deck{ height:72vh }
+  .circle{ width:60px; height:60px }
+  .header{ padding:14px 14px }
+}
+</style>
+</head>
+<body>
+<canvas id="fx"></canvas>
+<div class="blobs" aria-hidden="true"></div>
+
+<header class="header">
+  <div class="brand">Aplyd<span class="dot">•</span></div>
+  <div class="controls">
+    <span class="chip">Agent <input id="agentToggle" type="checkbox" aria-label="Toggle Agent Mode"></span>
+    <div class="chip range">
+      Auto-apply ≥ <input id="threshold" type="range" min="50" max="100" step="1">
+      <b id="thv">90</b>
+    </div>
+    <button class="btn primary" id="resetBtn">Reset Deck</button>
+  </div>
+</header>
+
+<section class="searchbar" aria-label="Filters">
+  <input class="input" id="q" placeholder="Search title or employer…">
+  <select id="loc">
+    <option value="">All locations</option>
+    <option>Remote</option>
+    <option>Onsite</option>
+    <option>Hybrid</option>
+  </select>
+  <select id="type">
+    <option value="">Any type</option>
+    <option>Full-time</option>
+    <option>Contract</option>
+    <option>Part-time</option>
+  </select>
+  <div class="chip">Tips: <kbd>←</kbd> pass <kbd>→</kbd> like <kbd>S</kbd> save</div>
+</section>
+
+<main class="wrap">
+  <div class="deck" id="deck" aria-live="polite"></div>
+</main>
+
+<section class="tray" aria-label="Pipeline">
+  <div class="chiprow" id="appliedRow"><b>Applied</b></div>
+  <div class="chiprow" id="savedRow"><b>Saved</b></div>
+  <div class="chiprow" id="passedRow"><b>Passed</b></div>
+</section>
+
+<div id="toasts" class="toast" role="status" aria-live="polite"></div>
+
+<script>
+/* ============== Data (mock) ============== */
+const EMPLOYERS = [
+  { id:"em-1", name:"Airtable", color:"#3b82f6", about:"Tools for connected apps." },
+  { id:"em-2", name:"Linear", color:"#0b1220", about:"Issue tracking re-imagined." },
+  { id:"em-3", name:"Figma", color:"#111827", about:"Design for teams." },
+  { id:"em-4", name:"Klarna", color:"#ef4444", about:"Smoooth payments." },
+  { id:"em-5", name:"Vercel", color:"#111827", about:"Develop. Preview. Ship." },
+];
+const ROLES = [
+  { id:"r-1", employer_id:"em-1", title:"Senior Backend Engineer", location:"Remote", type:"Full-time", salary:"$160–190k + equity", posted_at: Date.now()-8.6e6, tags:["Python","FastAPI","Postgres","AWS"] },
+  { id:"r-2", employer_id:"em-5", title:"Frontend Engineer", location:"Remote", type:"Full-time", salary:"$150–180k", posted_at: Date.now()-2.2e7, tags:["React","Next.js","TypeScript","Vercel"] },
+  { id:"r-3", employer_id:"em-2", title:"Full-stack Engineer", location:"Hybrid", type:"Full-time", salary:"$140–170k", posted_at: Date.now()-3.3e7, tags:["TS","Node","GraphQL","Prisma"] },
+  { id:"r-4", employer_id:"em-3", title:"Design Systems Engineer", location:"Remote", type:"Contract", salary:"$95–120/hr", posted_at: Date.now()-4.5e7, tags:["Web Components","A11y","TS"] },
+  { id:"r-5", employer_id:"em-4", title:"Payments Platform Engineer", location:"Onsite", type:"Full-time", salary:"Competitive", posted_at: Date.now()-7.1e7, tags:["Java","Kafka","AWS"] },
+  { id:"r-6", employer_id:"em-1", title:"Data Platform Engineer", location:"Remote", type:"Full-time", salary:"$170–200k", posted_at: Date.now()-1.5e7, tags:["Python","Spark","Airflow","DBT"] },
+  { id:"r-7", employer_id:"em-3", title:"Prod Infra Engineer", location:"Hybrid", type:"Full-time", salary:"$160–185k", posted_at: Date.now()-8.8e6, tags:["Go","Kubernetes","Observability"] },
+];
+
+/* ============== State ============== */
+const $ = (s, r=document)=> r.querySelector(s);
+const $$ = (s, r=document)=> Array.from(r.querySelectorAll(s));
+const clamp = (n,a,b)=> Math.max(a,Math.min(b,n));
+const state = {
+  q:"",
+  loc:"",
+  type:"",
+  cards:[],
+  applied:new Map(JSON.parse(localStorage.getItem("aplyd.applied")||"[]")),
+  saved:new Map(JSON.parse(localStorage.getItem("aplyd.saved")||"[]")),
+  passed:new Map(JSON.parse(localStorage.getItem("aplyd.passed")||"[]")),
+  agent: JSON.parse(localStorage.getItem("aplyd.agent")||"false"),
+  threshold: parseInt(localStorage.getItem("aplyd.threshold")||"90",10),
+};
+function persist(){
+  localStorage.setItem("aplyd.applied", JSON.stringify([...state.applied]));
+  localStorage.setItem("aplyd.saved", JSON.stringify([...state.saved]));
+  localStorage.setItem("aplyd.passed", JSON.stringify([...state.passed]));
+  localStorage.setItem("aplyd.agent", JSON.stringify(state.agent));
+  localStorage.setItem("aplyd.threshold", String(state.threshold));
+}
+
+/* ============== Helpers ============== */
+function employerBy(id){ return EMPLOYERS.find(e=>e.id===id) }
+function timeAgo(ts){
+  const diff = (Date.now() - ts)/1000;
+  const u = [["yr",31536000],["mo",2592000],["d",86400],["h",3600]];
+  for (const [k,s] of u) if (diff>=s) return `${Math.floor(diff/s)} ${k} ago`;
+  return "just now";
+}
+function guessFit(role){
+  const t = role.title.toLowerCase();
+  let s = 62;
+  if (t.includes("frontend")) s+=14;
+  if (t.includes("backend")) s+=18;
+  if (t.includes("full")) s+=10;
+  if (role.location.toLowerCase().includes("remote")) s+=8;
+  if (role.tags.some(x=>/typescript|python|java|react|fastapi|graphql|kafka|kubernetes|spark/i.test(x))) s+=6;
+  return clamp(Math.round(s), 50, 99);
+}
+function level(v){ return v>=90 ? "high" : v>=75 ? "med" : "low" }
+function toast(msg){
+  const host = $("#toasts"); const d = document.createElement("div");
+  d.className="t"; d.textContent=msg; host.appendChild(d);
+  setTimeout(()=>d.remove(), 3000);
+}
+
+/* ============== Confetti FX ============== */
+const fx = $("#fx"); const ctx = fx.getContext("2d");
+let particles=[];
+function resizeFx(){ fx.width=innerWidth; fx.height=innerHeight }
+addEventListener("resize", resizeFx); resizeFx();
+function confetti(x, y, n=80){
+  for(let i=0;i<n;i++){
+    particles.push({
+      x, y, r: Math.random()*4+2,
+      vx: (Math.random()-0.5)*6,
+      vy: Math.random()*-4-2,
+      color: ["#22c55e","#40a9ff","#c8ff3a","#ffd6e7","#e6e2ff"][i%5],
+      life: 60+Math.random()*30
+    });
+  }
+}
+function tick(){
+  ctx.clearRect(0,0,fx.width,fx.height);
+  particles.forEach(p=>{
+    p.x+=p.vx; p.y+=p.vy; p.vy+=0.12; p.life--;
+    ctx.fillStyle=p.color; ctx.beginPath();
+    ctx.arc(p.x,p.y,p.r,0,Math.PI*2); ctx.fill();
+  });
+  particles = particles.filter(p=>p.life>0);
+  requestAnimationFrame(tick);
+}
+tick();
+
+/* ============== Build deck ============== */
+function filters(role){
+  if (state.q){
+    const e = employerBy(role.employer_id).name.toLowerCase();
+    if (!(role.title+" "+e).toLowerCase().includes(state.q)) return false;
+  }
+  if (state.loc && role.location!==state.loc) return false;
+  if (state.type && role.type!==state.type) return false;
+  if (state.passed.has(role.id)) return false; // keep passed out of deck
+  if (state.applied.has(role.id)) return false; // hide applied too
+  return true;
+}
+
+function renderDeck(){
+  const deck = $("#deck"); deck.innerHTML="";
+  const roles = ROLES.filter(filters);
+  // top 6 only to keep DOM light
+  const stack = roles.slice(0,6);
+  state.cards = [];
+  stack.forEach((r,i)=> deck.appendChild(makeCard(r, i)));
+  renderTray();
+}
+
+function makeCard(role){
+  const emp = employerBy(role.employer_id);
+  const fit = guessFit(role);
+  const card = document.createElement("article");
+  card.className="card";
+  card.setAttribute("data-id", role.id);
+  card.innerHTML = `
+    <div class="top">
+      <div style="display:flex; align-items:center; gap:12px">
+        <div class="logo" aria-hidden="true" style="background:#eef7ff;color:#1849a9">${emp.name[0]}</div>
+        <div class="title">
+          <h3>${emp.name}</h3>
+          <small>${role.title}</small>
+        </div>
+      </div>
+      <div class="badge">⭐ ${fit} fit</div>
+    </div>
+    <div class="body">
+      <div class="meta">
+        <span>📍 ${role.location}</span>
+        <span>💼 ${role.type}</span>
+        <span>🕒 ${timeAgo(role.posted_at)}</span>
+        <span>💰 ${role.salary}</span>
+      </div>
+      <div class="tags">${role.tags.map(t=>`<span class="tag">${t}</span>`).join("")}</div>
+      <div class="fit" data-lvl="${level(fit)}">
+        <div><b>Fit Score</b></div>
+        <div class="score">${fit}</div>
+        ${state.agent && fit>=state.threshold ? '<span class="tag">Auto-apply eligible</span>' : ''}
+      </div>
+    </div>
+    <div class="actions">
+      <button class="circle pass"  data-act="pass"  title="Pass 👋">👋</button>
+      <button class="circle save"  data-act="save"  title="Save ⭐">⭐</button>
+      <button class="circle like"  data-act="like"  title="Like 💚">💚</button>
+    </div>
+  `;
+  enableDrag(card, role);
+  card.querySelectorAll("[data-act]").forEach(btn=>{
+    btn.addEventListener("click", (e)=>{
+      const box = card.getBoundingClientRect();
+      if (btn.dataset.act==="pass") go(card, -1, box);
+      if (btn.dataset.act==="save") { doSave(role); pulse(btn); }
+      if (btn.dataset.act==="like") go(card, 1, box, true);
+    });
+  });
+  return card;
+}
+
+function pulse(el){
+  el.animate([{transform:"scale(1)"},{transform:"scale(1.08)"},{transform:"scale(1)"}], {duration:160});
+}
+
+/* Drag / Swipe */
+function enableDrag(card, role){
+  let start=null, current={x:0,y:0}, pointerId=null;
+  const DECAY = 0.35, ROT= 12; const thresh = 120;
+
+  const onDown = (e)=>{
+    if (pointerId!==null) return;
+    pointerId = e.pointerId || 1;
+    card.setPointerCapture?.(pointerId);
+    start = { x: e.clientX, y: e.clientY };
+  };
+  const onMove = (e)=>{
+    if (!start) return;
+    current = { x: e.clientX - start.x, y: e.clientY - start.y };
+    const rot = (current.x / innerWidth) * ROT;
+    card.style.transform = `translate(${current.x}px, ${current.y}px) rotate(${rot}deg)`;
+    // Affordance color via box-shadow
+    const like = Math.sign(current.x) > 0;
+    card.style.boxShadow = like
+      ? "0 18px 60px rgba(34,197,94,.25), 0 6px 18px rgba(64,169,255,.22)"
+      : "0 18px 60px rgba(239,68,68,.20), 0 6px 18px rgba(255,99,99,.18)";
+  };
+  const onUp = (e)=>{
+    if (!start) return;
+    const dx = current.x;
+    const dir = Math.abs(dx) > thresh ? Math.sign(dx) : 0;
+    const rect = card.getBoundingClientRect();
+    if (dir!==0){
+      go(card, dir, rect, dir>0);
+    }else{
+      card.style.transition = "transform .18s ease";
+      card.style.transform = "translate(0,0) rotate(0)";
+      setTimeout(()=>{ card.style.transition=""; card.style.boxShadow="var(--shadow)"; }, 180);
+    }
+    start=null; pointerId=null;
+  };
+
+  card.addEventListener("pointerdown", onDown);
+  addEventListener("pointermove", onMove);
+  addEventListener("pointerup", onUp);
+  addEventListener("pointercancel", onUp);
+
+  function go(el, dir, rect, liked=false){
+    el.classList.add("leave");
+    const offX = dir>0 ? innerWidth : -innerWidth;
+    el.style.transition = "transform .28s ease, opacity .28s ease";
+    el.style.transform = `translate(${offX}px, ${rect.y - innerHeight*0.15}px) rotate(${dir*18}deg)`;
+    el.style.opacity = 0;
+    setTimeout(()=>{ el.remove(); renderTray(); if (!liked){ doPass(role); } else { doLike(role, rect); } nextAutoApply(role, liked);}, 260);
+  }
+}
+
+function doPass(role){
+  state.passed.set(role.id, role.title); persist();
+  toast(`Passed ${employerBy(role.employer_id).name} – ${role.title} 👋`);
+  addChip($("#passedRow"), role, "👋");
+  // Pull in next card if available
+  renderDeck();
+}
+function doSave(role){
+  state.saved.set(role.id, role.title); persist();
+  toast(`Saved ${employerBy(role.employer_id).name} – ${role.title} ⭐`);
+  addChip($("#savedRow"), role, "⭐");
+}
+function doLike(role, rect){
+  state.applied.set(role.id, role.title); persist();
+  toast(`Applied to ${employerBy(role.employer_id).name} – ${role.title} 🎯`);
+  addChip($("#appliedRow"), role, "💚");
+  confetti(rect?.x + rect?.width/2 || innerWidth/2, rect?.y + 60 || innerHeight/2, 90);
+  renderDeck();
+}
+
+function nextAutoApply(role, liked){
+  // Agent Mode: if fit≥threshold and user swiped pass by mistake? We'll only auto-apply on like.
+  if (!state.agent) return;
+  const fit = guessFit(role);
+  if (liked && fit >= state.threshold){
+    // nothing extra — like already applied
+  }
+}
+
+/* ============== Tray chips ============== */
+function addChip(row, role, icon){
+  const emp = employerBy(role.employer_id);
+  const chip = document.createElement("span");
+  chip.className="pill";
+  chip.textContent = `${icon} ${emp.name} — ${role.title}`;
+  row.appendChild(chip);
+}
+function renderTray(){
+  const appliedRow=$("#appliedRow"), savedRow=$("#savedRow"), passedRow=$("#passedRow");
+  [appliedRow, savedRow, passedRow].forEach(r=>{
+    r.innerHTML = "<b>"+r.firstChild.textContent+"</b>";
+  });
+  state.applied.forEach((_,id)=>{
+    const r = ROLES.find(x=>x.id===id); if (r) addChip(appliedRow, r, "💚");
+  });
+  state.saved.forEach((_,id)=>{
+    const r = ROLES.find(x=>x.id===id); if (r) addChip(savedRow, r, "⭐");
+  });
+  state.passed.forEach((_,id)=>{
+    const r = ROLES.find(x=>x.id===id); if (r) addChip(passedRow, r, "👋");
+  });
+}
+
+/* ============== Wiring ============== */
+function bindFilters(){
+  $("#q").addEventListener("input", e=>{ state.q = e.target.value.trim().toLowerCase(); renderDeck(); });
+  $("#loc").addEventListener("change", e=>{ state.loc = e.target.value; renderDeck(); });
+  $("#type").addEventListener("change", e=>{ state.type = e.target.value; renderDeck(); });
+  $("#resetBtn").addEventListener("click", ()=>{
+    state.passed.clear(); state.applied.clear(); state.saved.clear(); persist();
+    renderDeck(); renderTray(); toast("Deck reset ✔️");
+  });
+
+  // Agent toggles
+  $("#agentToggle").checked = state.agent;
+  $("#agentToggle").addEventListener("change", e=>{
+    state.agent = e.target.checked; persist();
+    toast(state.agent ? "Agent Mode enabled ✔️" : "Agent Mode disabled");
+    renderDeck();
+  });
+  $("#threshold").value = state.threshold; $("#thv").textContent = state.threshold;
+  $("#threshold").addEventListener("input", e=>{
+    state.threshold = +e.target.value; $("#thv").textContent = state.threshold; persist(); renderDeck();
+  });
+
+  // Keyboard shortcuts
+  addEventListener("keydown", e=>{
+    const top = $("#deck .card:last-child"); if (!top) return;
+    const box = top.getBoundingClientRect();
+    const role = ROLES.find(r=>r.id===top.dataset.id);
+    if (e.key==="ArrowLeft"){ top.querySelector('[data-act="pass"]').click(); }
+    if (e.key==="ArrowRight"){ top.querySelector('[data-act="like"]').click(); }
+    if (e.key.toLowerCase()==="s"){ top.querySelector('[data-act="save"]').click(); }
+    if (e.key===" "){ e.preventDefault(); top.querySelector('[data-act="like"]').click(); }
+  }, {passive:false});
+}
+
+/* ============== Kickoff ============== */
+bindFilters();
+renderDeck();
+</script>
+</body>
+</html>
